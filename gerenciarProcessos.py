@@ -6,6 +6,8 @@ def menu():
     print("2. SJF")
     print("3. PRIORIDADE")
     print("4. RR")
+    print("5. Múltiplas Filas (Híbrido)")
+
     option = int(input("Digite a opção desejada: "))
 
     if (option == 0):
@@ -18,6 +20,8 @@ def menu():
         prioridade()
     elif (option == 4):
         rr()
+    elif (option == 5):
+        multipla_fila()
 
 
 #FCFS o primeiro a chegar é o primeiro a sair
@@ -132,8 +136,59 @@ def rr():
     print("Todos os processos foram concluídos.")
     
     menu()
+    
+#Múltiplas Filas, usa várias filas de processos com diferentes níveis de prioridade
+def multipla_fila():
+    print("-----Modelo MÚLTIPLAS FILAS (HÍBRIDO)-----")
+    quant_processo = int(input("Digite a quantidade de processos que serão criados: "))
+    fila1 = []  # Round Robin (prioridade 1 a 2)
+    fila2 = []  # SJF (prioridade 3 a 4)
+    fila3 = []  # FCFS (prioridade 5+)
 
+    for i in range(quant_processo):
+        nome = str(input(f"Nome do processo {i+1}: "))
+        tempo = int(input(f"Tempo de execução de {nome}: "))
+        prioridade = int(input(f"Prioridade de {nome} (1 = mais prioritário): "))
 
+        if prioridade <= 2:
+            fila1.append([nome, tempo])
+        elif prioridade <= 4:
+            fila2.append([nome, tempo])
+        else:
+            fila3.append([nome, tempo])
+    
+    print("\n----- Executando Fila 1: Round Robin (prioridades 1-2) -----")
+    quantum = int(input("Digite o quantum para Round Robin: "))
+    tempo_total = 0
+    fila = fila1.copy()
+    while fila:
+        processo = fila.pop(0)
+        nome, tempo_exec = processo
+        if tempo_exec > quantum:
+            print(f"Tempo {tempo_total}: {nome} executa {quantum}")
+            tempo_exec -= quantum
+            tempo_total += quantum
+            fila.append([nome, tempo_exec])
+        else:
+            print(f"Tempo {tempo_total}: {nome} executa {tempo_exec} (finalizado)")
+            tempo_total += tempo_exec
+
+    print("\n----- Executando Fila 2: SJF (prioridades 3-4) -----")
+    fila2.sort(key=lambda x: x[1])
+    for processo in fila2:
+        nome, tempo_exec = processo
+        print(f"Tempo {tempo_total}: {nome} executa {tempo_exec} (finalizado)")
+        tempo_total += tempo_exec
+
+    print("\n----- Executando Fila 3: FCFS (prioridades 5+) -----")
+    for processo in fila3:
+        nome, tempo_exec = processo
+        print(f"Tempo {tempo_total}: {nome} executa {tempo_exec} (finalizado)")
+        tempo_total += tempo_exec
+
+    print("\nTodos os processos foram concluídos.\n")
+
+    menu()
 #Chama o menu para inicar o codigo
 menu()
 
