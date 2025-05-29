@@ -3,67 +3,58 @@ from tkinter import simpledialog, Toplevel, Text
 from PIL import Image, ImageTk
 
 def show_result(title, lines):
-    # Janela de loading
-    loading_win = Toplevel(root)
-    loading_win.title("Aguarde")
-    loading_win.geometry("300x200")
+    result_win = Toplevel(root)
+    result_win.title(title)
+    result_win.configure(bg="#f0f2f5")
+    result_win.geometry("600x400")
+    result_win.resizable(False, False)
 
-    gif = Image.open("loading.gif")
-    frames = []
-    try:
-        while True:
-            frame = gif.copy().convert("RGBA")
-            frames.append(ImageTk.PhotoImage(frame))
-            gif.seek(len(frames))
-    except EOFError:
-        pass
+    header = tk.Label(result_win, text=title, font=("Segoe UI", 18, "bold"), bg="#f0f2f5", fg="#2c3e50")
+    header.pack(pady=(15, 5))
 
-    gif_label = tk.Label(loading_win)
-    gif_label.pack(pady=10)
+    frame = tk.Frame(result_win, bg="white", bd=2, relief="groove")
+    frame.pack(padx=20, pady=10, fill="both", expand=True)
 
-    tk.Label(loading_win, text="Processando, por favor aguarde...", font=("Arial", 12)).pack(pady=10)
+    scrollbar = tk.Scrollbar(frame)
+    scrollbar.pack(side="right", fill="y")
 
-    # Controle de animação
-    animation_running = True
+    text = Text(frame, width=60, height=20, wrap="word", yscrollcommand=scrollbar.set,
+                bg="white", fg="#333", font=("Segoe UI", 12), bd=0, padx=10, pady=10)
+    text.pack(fill="both", expand=True)
+    scrollbar.config(command=text.yview)
 
-    def animate(idx=0):
-        if not animation_running:
-            return
-        gif_label.config(image=frames[idx])
-        next_idx = (idx + 1) % len(frames)
-        loading_win.after(100, animate, next_idx)
+    text.config(state='normal')
 
-    animate()
+    spinners = ['|', '/', '-', '\\']
 
-    def exibir_resultado():
-        nonlocal animation_running
-        animation_running = False  # Para o loop
-        loading_win.destroy()
+    def animar_spinner(base_text, frame_count, line_index):
+        spinner_index = frame_count % len(spinners)
 
-        result_win = Toplevel(root)
-        result_win.title(title)
-        result_win.configure(bg="#f0f2f5")
-        result_win.geometry("600x400")
-        result_win.resizable(False, False)
+        if frame_count < 8:
+            # Remove linha anterior e mostra nova animação
+            text.delete("end-2l", "end-1l")
+            text.insert(tk.END, f"{base_text} {spinners[spinner_index]}\n")
+            text.see(tk.END)
+            result_win.after(100, animar_spinner, base_text, frame_count + 1, line_index)
+        else:
+            # Exibe o resultado final
+            text.delete("end-2l", "end-1l")
+            text.insert(tk.END, f"{lines[line_index]}\n")
+            result_win.after(300, mostrar_linhas, line_index + 1)
 
-        header = tk.Label(result_win, text=title, font=("Segoe UI", 18, "bold"), bg="#f0f2f5", fg="#2c3e50")
-        header.pack(pady=(15, 5))
+    def mostrar_linhas(index=0):
+        if index < len(lines):
+            nome_proc = lines[index].split(":")[0] if ":" in lines[index] else lines[index]
+            base = f"Processando {nome_proc}"
+            text.insert(tk.END, "\n")  # espaço para a animação
+            animar_spinner(base, 0, index)
+        else:
+            text.config(state='disabled')
 
-        frame = tk.Frame(result_win, bg="white", bd=2, relief="groove")
-        frame.pack(padx=20, pady=10, fill="both", expand=True)
+    mostrar_linhas()
 
-        scrollbar = tk.Scrollbar(frame)
-        scrollbar.pack(side="right", fill="y")
 
-        text = Text(frame, width=60, height=20, wrap="word", yscrollcommand=scrollbar.set, bg="white", fg="#333", font=("Segoe UI", 12), bd=0, padx=10, pady=10)
-        text.pack(fill="both", expand=True)
-        scrollbar.config(command=text.yview)
 
-        for line in lines:
-            text.insert(tk.END, line + '\n')
-        text.config(state='disabled')
-
-    root.after(2000, exibir_resultado)
 
 
 def fcfs_gui():
