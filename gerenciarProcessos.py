@@ -1,26 +1,66 @@
 import tkinter as tk
-from tkinter import simpledialog, messagebox
+from tkinter import simpledialog,Toplevel, Text
+from PIL import Image, ImageTk
 
-# Função auxiliar para mostrar resultado
+
 def show_result(title, lines):
-    result_win = tk.Toplevel(root)
-    result_win.title(title)
-    text = tk.Text(result_win, width=60, height=20)
-    text.pack(padx=10, pady=10)
-    for line in lines:
-        text.insert(tk.END, line + '\n')
-    text.config(state='disabled')
+    # Janela de loading
+    loading_win = Toplevel(root)
+    loading_win.title("Aguarde")
+    loading_win.geometry("300x200")
+
+    # Carregando o GIF animado
+    gif = Image.open("loading.gif")
+    frames = []
+    try:
+        while True:
+            frame = gif.copy().convert("RGBA")
+            frames.append(ImageTk.PhotoImage(frame))
+            gif.seek(len(frames))  # Próximo frame
+    except EOFError:
+        pass  # Fim dos frames
+
+    gif_label = tk.Label(loading_win)
+    gif_label.pack(pady=10)
+
+    def animate(idx=0):
+        gif_label.config(image=frames[idx])
+        next_idx = (idx + 1) % len(frames)
+        loading_win.after(100, animate, next_idx)
+
+    animate()
+
+    tk.Label(loading_win, text="Processando, por favor aguarde...", font=("Arial", 12)).pack(pady=10)
+
+    # Mostra o resultado após um pequeno delay (ex: 2 segundos)
+    def exibir_resultado():
+        loading_win.destroy()
+        result_win = Toplevel(root)
+        result_win.title(title)
+        text = Text(result_win, width=60, height=20)
+        text.pack(padx=10, pady=10)
+        for line in lines:
+            text.insert(tk.END, line + '\n')
+        text.config(state='disabled')
+
+    root.after(2000, exibir_resultado)
+
+
 
 
 def fcfs_gui():
     processos = []
     #cria uma janela de diálogo para solicitar a quantidade de processos
     quant = simpledialog.askinteger("FCFS", "Quantidade de processos:")
-    if not quant: return
+    if quant is None or quant <= 0:
+        return 
 
     for i in range(quant):
         nome = simpledialog.askstring("FCFS", f"Nome do processo {i + 1}:")
-        processos.append(nome)
+
+        if nome is None or nome.strip() == "":
+            return
+        processos.append(nome.strip())
 
     resultado = ["----- ORDEM DE PROCESSO /FCFS/ -----", "Obs: O 1° processo acima foi o primeiro a ser processado!"]
     for p in processos:
@@ -31,7 +71,8 @@ def fcfs_gui():
 def sjf_gui():
     processos = []
     quant = simpledialog.askinteger("SJF", "Quantidade de processos:")
-    if not quant: return
+    if quant is None or quant <= 0:
+        return 
 
     for i in range(quant):
         nome = simpledialog.askstring("SJF", f"Nome do processo {i + 1}:")
@@ -48,7 +89,8 @@ def sjf_gui():
 def prioridade_gui():
     processos = []
     quant = simpledialog.askinteger("PRIORIDADE", "Quantidade de processos:")
-    if not quant: return
+    if quant is None or quant <= 0:
+        return 
 
     for i in range(quant):
         nome = simpledialog.askstring("PRIORIDADE", f"Nome do processo {i + 1}:")
@@ -65,9 +107,11 @@ def prioridade_gui():
 def rr_gui():
     processos = []
     quant = simpledialog.askinteger("RR", "Quantidade de processos:")
-    if not quant: return
+    if quant is None or quant <= 0:
+        return 
     quantum = simpledialog.askinteger("RR", "Tempo quantum:")
-    if not quantum: return
+    if quantum is None or quantum <= 0:
+        return 
 
     for i in range(quant):
         nome = simpledialog.askstring("RR", f"Nome do processo {i + 1}:")
@@ -93,7 +137,8 @@ def rr_gui():
 
 def multipla_gui():
     quant = simpledialog.askinteger("MULTIFILA", "Quantidade de processos:")
-    if not quant: return
+    if quant is None or quant <= 0:
+        return 
 
     fila1, fila2, fila3 = [], [], []
     for i in range(quant):
