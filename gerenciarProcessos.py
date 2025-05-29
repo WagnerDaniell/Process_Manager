@@ -1,7 +1,6 @@
 import tkinter as tk
-from tkinter import simpledialog,Toplevel, Text
+from tkinter import simpledialog, Toplevel, Text
 from PIL import Image, ImageTk
-
 
 def show_result(title, lines):
     # Janela de loading
@@ -9,36 +8,57 @@ def show_result(title, lines):
     loading_win.title("Aguarde")
     loading_win.geometry("300x200")
 
-    # Carregando o GIF animado
     gif = Image.open("loading.gif")
     frames = []
     try:
         while True:
             frame = gif.copy().convert("RGBA")
             frames.append(ImageTk.PhotoImage(frame))
-            gif.seek(len(frames))  # Próximo frame
+            gif.seek(len(frames))
     except EOFError:
-        pass  # Fim dos frames
+        pass
 
     gif_label = tk.Label(loading_win)
     gif_label.pack(pady=10)
 
+    tk.Label(loading_win, text="Processando, por favor aguarde...", font=("Arial", 12)).pack(pady=10)
+
+    # Controle de animação
+    animation_running = True
+
     def animate(idx=0):
+        if not animation_running:
+            return
         gif_label.config(image=frames[idx])
         next_idx = (idx + 1) % len(frames)
         loading_win.after(100, animate, next_idx)
 
     animate()
 
-    tk.Label(loading_win, text="Processando, por favor aguarde...", font=("Arial", 12)).pack(pady=10)
-
-    # Mostra o resultado após um pequeno delay (ex: 2 segundos)
     def exibir_resultado():
+        nonlocal animation_running
+        animation_running = False  # Para o loop
         loading_win.destroy()
+
         result_win = Toplevel(root)
         result_win.title(title)
-        text = Text(result_win, width=60, height=20)
-        text.pack(padx=10, pady=10)
+        result_win.configure(bg="#f0f2f5")
+        result_win.geometry("600x400")
+        result_win.resizable(False, False)
+
+        header = tk.Label(result_win, text=title, font=("Segoe UI", 18, "bold"), bg="#f0f2f5", fg="#2c3e50")
+        header.pack(pady=(15, 5))
+
+        frame = tk.Frame(result_win, bg="white", bd=2, relief="groove")
+        frame.pack(padx=20, pady=10, fill="both", expand=True)
+
+        scrollbar = tk.Scrollbar(frame)
+        scrollbar.pack(side="right", fill="y")
+
+        text = Text(frame, width=60, height=20, wrap="word", yscrollcommand=scrollbar.set, bg="white", fg="#333", font=("Segoe UI", 12), bd=0, padx=10, pady=10)
+        text.pack(fill="both", expand=True)
+        scrollbar.config(command=text.yview)
+
         for line in lines:
             text.insert(tk.END, line + '\n')
         text.config(state='disabled')
@@ -46,18 +66,14 @@ def show_result(title, lines):
     root.after(2000, exibir_resultado)
 
 
-
-
 def fcfs_gui():
     processos = []
-    #cria uma janela de diálogo para solicitar a quantidade de processos
     quant = simpledialog.askinteger("FCFS", "Quantidade de processos:")
     if quant is None or quant <= 0:
-        return 
+        return
 
     for i in range(quant):
         nome = simpledialog.askstring("FCFS", f"Nome do processo {i + 1}:")
-
         if nome is None or nome.strip() == "":
             return
         processos.append(nome.strip())
@@ -72,12 +88,16 @@ def sjf_gui():
     processos = []
     quant = simpledialog.askinteger("SJF", "Quantidade de processos:")
     if quant is None or quant <= 0:
-        return 
+        return
 
     for i in range(quant):
         nome = simpledialog.askstring("SJF", f"Nome do processo {i + 1}:")
+        if nome is None or nome.strip() == "":
+            return
         tempo = simpledialog.askinteger("SJF", f"Tempo de execução de {nome}:")
-        processos.append([nome, tempo])
+        if tempo is None or tempo <= 0:
+            return
+        processos.append([nome.strip(), tempo])
 
     processos.sort(key=lambda x: x[1])
     resultado = ["----- ORDEM DE PROCESSO /SJF/ -----"]
@@ -90,12 +110,16 @@ def prioridade_gui():
     processos = []
     quant = simpledialog.askinteger("PRIORIDADE", "Quantidade de processos:")
     if quant is None or quant <= 0:
-        return 
+        return
 
     for i in range(quant):
         nome = simpledialog.askstring("PRIORIDADE", f"Nome do processo {i + 1}:")
+        if nome is None or nome.strip() == "":
+            return
         prioridade = simpledialog.askinteger("PRIORIDADE", f"Prioridade (menor = mais prioritário) de {nome}:")
-        processos.append([nome, prioridade])
+        if prioridade is None or prioridade < 0:
+            return
+        processos.append([nome.strip(), prioridade])
 
     processos.sort(key=lambda x: x[1])
     resultado = ["----- ORDEM DE PROCESSO /PRIORIDADE/ -----"]
@@ -108,15 +132,19 @@ def rr_gui():
     processos = []
     quant = simpledialog.askinteger("RR", "Quantidade de processos:")
     if quant is None or quant <= 0:
-        return 
+        return
     quantum = simpledialog.askinteger("RR", "Tempo quantum:")
     if quantum is None or quantum <= 0:
-        return 
+        return
 
     for i in range(quant):
         nome = simpledialog.askstring("RR", f"Nome do processo {i + 1}:")
+        if nome is None or nome.strip() == "":
+            return
         tempo = simpledialog.askinteger("RR", f"Tempo de execução de {nome}:")
-        processos.append([nome, tempo])
+        if tempo is None or tempo <= 0:
+            return
+        processos.append([nome.strip(), tempo])
 
     fila = processos.copy()
     tempo_total = 0
@@ -138,21 +166,31 @@ def rr_gui():
 def multipla_gui():
     quant = simpledialog.askinteger("MULTIFILA", "Quantidade de processos:")
     if quant is None or quant <= 0:
-        return 
+        return
 
     fila1, fila2, fila3 = [], [], []
     for i in range(quant):
         nome = simpledialog.askstring("MULTIFILA", f"Nome do processo {i+1}:")
+        if nome is None or nome.strip() == "":
+            return
         tempo = simpledialog.askinteger("MULTIFILA", f"Tempo de execução de {nome}:")
+        if tempo is None or tempo <= 0:
+            return
         prioridade = simpledialog.askinteger("MULTIFILA", f"Prioridade de {nome} (1 = mais prioritário):")
+        if prioridade is None or prioridade <= 0:
+            return
+
         if prioridade <= 2:
-            fila1.append([nome, tempo])
+            fila1.append([nome.strip(), tempo])
         elif prioridade <= 4:
-            fila2.append([nome, tempo])
+            fila2.append([nome.strip(), tempo])
         else:
-            fila3.append([nome, tempo])
+            fila3.append([nome.strip(), tempo])
 
     quantum = simpledialog.askinteger("MULTIFILA", "Quantum para Round Robin:")
+    if quantum is None or quantum <= 0:
+        return
+
     tempo_total = 0
     resultado = []
 
@@ -183,12 +221,9 @@ def multipla_gui():
 
 
 # ----- Interface principal -----
-#iniciando a janela raiz do Tkinter
 root = tk.Tk()
-# Definindo o titulo da janela
 root.title("Simulador de Processos")
 
-# definindo label titulo da janela
 label = tk.Label(root, text="Escolha um algoritmo de escalonamento:", font=("Arial", 14))
 label.pack(pady=10)
 
