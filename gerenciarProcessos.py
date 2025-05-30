@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import simpledialog, Toplevel, Text
-from PIL import Image, ImageTk
+
 
 def show_result(title, lines):
     result_win = Toplevel(root)
@@ -213,9 +213,9 @@ def multipla_gui():
 
 # ----- Interface principal -----
 root = tk.Tk()
-root.title("Simulador de Processos")
+root.title("Simulador de Escalonamento de Processos")
 
-label = tk.Label(root, text="Escolha um algoritmo de escalonamento:", font=("Arial", 14))
+label = tk.Label(root, text="Escolha um tipo de escalonamento:", font=("Arial", 14))
 label.pack(pady=10)
 
 tk.Button(root, text="FCFS", width=30, command=fcfs_gui).pack(pady=5)
