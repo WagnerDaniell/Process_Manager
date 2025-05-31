@@ -1,9 +1,6 @@
 import tkinter as tk
 from tkinter import simpledialog, Toplevel, Text, messagebox
 
-#Mostrar os resultados personalizado!
-
-#esse frame resumidamente são uma div kk
 def show_result(title, lines):
     result_win = Toplevel(root)
     result_win.title(title)
@@ -50,47 +47,68 @@ def show_result(title, lines):
     
     # spinner
     spinners = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
+    current_spinner_id = None
     
-    def animar_spinner(base_text, frame_count, line_index):
+    def animar_spinner(base_text, line_index, frame_count=0):
+        nonlocal current_spinner_id
+        
+        # se já tem um spinner rodando, cancela ele
+        if current_spinner_id:
+            result_win.after_cancel(current_spinner_id)
+        
         spinner_index = frame_count % len(spinners)
         
-        if frame_count < 10:
-            text.delete("end-2l", "end-1l")
-            text.insert(tk.END, f"{spinners[spinner_index]} {base_text}\n")
-            text.see(tk.END)
-            text.tag_add('spinner', 'end-2l linestart', 'end-2l lineend')
-            text.tag_config('spinner', foreground="#3498db")
-            result_win.after(80, animar_spinner, base_text, frame_count + 1, line_index)
+        line_num = text.index('end-1c').split('.')[0]
+        start_idx = f"{line_num}.0"
+        end_idx = f"{line_num}.end"
+        
+        text.delete(start_idx, end_idx)
+        text.insert(start_idx, f"{spinners[spinner_index]} {base_text}")
+        text.tag_add('spinner', start_idx, end_idx)
+        text.tag_config('spinner', foreground="#3498db")
+        text.see(tk.END)
+        
+        if frame_count < 9: 
+            current_spinner_id = result_win.after(80, animar_spinner, base_text, line_index, frame_count + 1)
         else:
-            text.delete("end-2l", "end-1l")
-            text.insert(tk.END, f"✓ {lines[line_index]}\n")
-            text.tag_add('done', 'end-2l linestart', 'end-2l lineend')
+            text.delete(start_idx, end_idx)
+            text.insert(start_idx, f"✓ {lines[line_index]}")
+            text.tag_add('done', start_idx, end_idx)
             text.tag_config('done', foreground="#2ecc71")
+            text.see(tk.END)
+            
             result_win.after(200, mostrar_linhas, line_index + 1)
     
     def mostrar_linhas(index=0):
+        nonlocal current_spinner_id
+        
         if index < len(lines):
-            nome_proc = lines[index].split(":")[0] if ":" in lines[index] else lines[index]
-            base = f"Processando {nome_proc}" if "-----" not in lines[index] else lines[index]
+            line = lines[index]
             
-            if "-----" in lines[index]:
-                text.insert(tk.END, f"\n{lines[index]}\n")
-                text.tag_add('header', 'end-2l linestart', 'end-2l lineend')
-                text.tag_config('header', 
-                              foreground="#2c3e50", 
-                              font=("Segoe UI", 11, "bold"))
+            if line.startswith("-----") or line.startswith("\n") or "FILA" in line or "Quantum" in line:
+                text.insert(tk.END, f"{line}\n")
+                
+                if line.startswith("-----"):
+                    text.tag_add('header', 'end-2l linestart', 'end-2l lineend')
+                    text.tag_config('header', foreground="#2c3e50", font=("Segoe UI", 11, "bold"))
+                elif "FILA" in line:
+                    text.tag_add('fila', 'end-2l linestart', 'end-2l lineend')
+                    text.tag_config('fila', foreground="#2ecc71", font=("Segoe UI", 11, "bold"))
+                
+                result_win.after(100, mostrar_linhas, index + 1)
+            elif "✅" in line or "🔄" in line:
+                text.insert(tk.END, f"{line}\n")
+                text.see(tk.END)
                 result_win.after(100, mostrar_linhas, index + 1)
             else:
-                text.insert(tk.END, "\n")
-                animar_spinner(base, 0, index)
+                nome_proc = line.split(":")[0] if ":" in line else line
+                base = f"Processando {nome_proc}"
+                text.insert(tk.END, "\n")  # cria nova linha para o spinner
+                animar_spinner(base, index)
         else:
             text.config(state='disabled')
-            # processamento concluido
             text.insert(tk.END, "\n\nProcessamento concluído ✓", 'footer')
-            text.tag_config('footer', 
-                          foreground="#2ecc71", 
-                          font=("Segoe UI", 10, "bold"),
-                          justify='center')
+            text.tag_config('footer', foreground="#2ecc71", font=("Segoe UI", 10, "bold"), justify='center')
     
     mostrar_linhas()
 
@@ -103,7 +121,7 @@ def rr_gui():
     processos = []
     quant = simpledialog.askinteger("RR", "Quantidade de processos:")
     if quant is None or quant <= 0:
-        return #Fecha a caixinha
+        return
 
     for i in range(quant):
         nome = simpledialog.askstring("RR", f"Nome do processo {i + 1}:")
@@ -205,7 +223,6 @@ def multipla_gui():
         tempo_total += tempo_exec
 
     show_result("Múltiplas Filas", resultado)
-
 
 def fcfs_gui():
     processos = []
