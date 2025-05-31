@@ -1,6 +1,5 @@
 import tkinter as tk
-from tkinter import simpledialog, Toplevel, Text
-
+from tkinter import simpledialog, Toplevel, Text, messagebox
 
 def show_result(title, lines):
     result_win = Toplevel(root)
@@ -53,79 +52,15 @@ def show_result(title, lines):
 
     mostrar_linhas()
 
-
-
-
-
-def fcfs_gui():
-    processos = []
-    quant = simpledialog.askinteger("FCFS", "Quantidade de processos:")
-    if quant is None or quant <= 0:
-        return
-
-    for i in range(quant):
-        nome = simpledialog.askstring("FCFS", f"Nome do processo {i + 1}:")
-        if nome is None or nome.strip() == "":
-            return
-        processos.append(nome.strip())
-
-    resultado = ["----- ORDEM DE PROCESSO /FCFS/ -----", "Obs: O 1° processo acima foi o primeiro a ser processado!"]
-    for p in processos:
-        resultado.append(p)
-    show_result("FCFS", resultado)
-
-
-def sjf_gui():
-    processos = []
-    quant = simpledialog.askinteger("SJF", "Quantidade de processos:")
-    if quant is None or quant <= 0:
-        return
-
-    for i in range(quant):
-        nome = simpledialog.askstring("SJF", f"Nome do processo {i + 1}:")
-        if nome is None or nome.strip() == "":
-            return
-        tempo = simpledialog.askinteger("SJF", f"Tempo de execução de {nome}:")
-        if tempo is None or tempo <= 0:
-            return
-        processos.append([nome.strip(), tempo])
-
-    processos.sort(key=lambda x: x[1])
-    resultado = ["----- ORDEM DE PROCESSO /SJF/ -----"]
-    for p in processos:
-        resultado.append(f"{p[0]} - {p[1]}")
-    show_result("SJF", resultado)
-
-
-def prioridade_gui():
-    processos = []
-    quant = simpledialog.askinteger("PRIORIDADE", "Quantidade de processos:")
-    if quant is None or quant <= 0:
-        return
-
-    for i in range(quant):
-        nome = simpledialog.askstring("PRIORIDADE", f"Nome do processo {i + 1}:")
-        if nome is None or nome.strip() == "":
-            return
-        prioridade = simpledialog.askinteger("PRIORIDADE", f"Prioridade (menor = mais prioritário) de {nome}:")
-        if prioridade is None or prioridade < 0:
-            return
-        processos.append([nome.strip(), prioridade])
-
-    processos.sort(key=lambda x: x[1])
-    resultado = ["----- ORDEM DE PROCESSO /PRIORIDADE/ -----"]
-    for p in processos:
-        resultado.append(f"{p[0]} - Prioridade {p[1]}")
-    show_result("PRIORIDADE", resultado)
-
+def calcular_quantum_automatico(processos):
+    tempos = [p[1] for p in processos]
+    media = sum(tempos) / len(tempos)
+    return max(1, round(media))
 
 def rr_gui():
     processos = []
     quant = simpledialog.askinteger("RR", "Quantidade de processos:")
     if quant is None or quant <= 0:
-        return
-    quantum = simpledialog.askinteger("RR", "Tempo quantum:")
-    if quantum is None or quantum <= 0:
         return
 
     for i in range(quant):
@@ -137,9 +72,21 @@ def rr_gui():
             return
         processos.append([nome.strip(), tempo])
 
+    # Perguntar se quer definir quantum manualmente ou automaticamente
+    resposta = messagebox.askyesno("RR", "Deseja definir o quantum manualmente? (Não para calcular automaticamente)")
+    
+    if resposta:
+        quantum = simpledialog.askinteger("RR", "Tempo quantum:")
+        if quantum is None or quantum <= 0:
+            return
+    else:
+        quantum = calcular_quantum_automatico(processos)
+        messagebox.showinfo("RR", f"Quantum calculado: {quantum}")
+
     fila = processos.copy()
     tempo_total = 0
     resultado = ["----- ORDEM DE PROCESSO /RR/ -----"]
+    resultado.append(f"Quantum utilizado: {quantum}")
 
     while fila:
         nome, tempo = fila.pop(0)
@@ -152,7 +99,6 @@ def rr_gui():
             tempo_total += tempo
 
     show_result("RR", resultado)
-
 
 def multipla_gui():
     quant = simpledialog.askinteger("MULTIFILA", "Quantidade de processos:")
@@ -178,9 +124,16 @@ def multipla_gui():
         else:
             fila3.append([nome.strip(), tempo])
 
-    quantum = simpledialog.askinteger("MULTIFILA", "Quantum para Round Robin:")
-    if quantum is None or quantum <= 0:
-        return
+    # Perguntar se quer definir quantum manualmente ou automaticamente
+    resposta = messagebox.askyesno("MULTIFILA", "Deseja definir o quantum manualmente? (Não para calcular automaticamente)")
+    
+    if resposta:
+        quantum = simpledialog.askinteger("MULTIFILA", "Quantum para Round Robin:")
+        if quantum is None or quantum <= 0:
+            return
+    else:
+        quantum = calcular_quantum_automatico(fila1) if fila1 else 1
+        messagebox.showinfo("MULTIFILA", f"Quantum calculado: {quantum}")
 
     tempo_total = 0
     resultado = []
@@ -210,6 +163,65 @@ def multipla_gui():
 
     show_result("Múltiplas Filas", resultado)
 
+# ----- Restante do código original permanece igual -----
+def fcfs_gui():
+    processos = []
+    quant = simpledialog.askinteger("FCFS", "Quantidade de processos:")
+    if quant is None or quant <= 0:
+        return
+
+    for i in range(quant):
+        nome = simpledialog.askstring("FCFS", f"Nome do processo {i + 1}:")
+        if nome is None or nome.strip() == "":
+            return
+        processos.append(nome.strip())
+
+    resultado = ["----- ORDEM DE PROCESSO /FCFS/ -----", "Obs: O 1° processo acima foi o primeiro a ser processado!"]
+    for p in processos:
+        resultado.append(p)
+    show_result("FCFS", resultado)
+
+def sjf_gui():
+    processos = []
+    quant = simpledialog.askinteger("SJF", "Quantidade de processos:")
+    if quant is None or quant <= 0:
+        return
+
+    for i in range(quant):
+        nome = simpledialog.askstring("SJF", f"Nome do processo {i + 1}:")
+        if nome is None or nome.strip() == "":
+            return
+        tempo = simpledialog.askinteger("SJF", f"Tempo de execução de {nome}:")
+        if tempo is None or tempo <= 0:
+            return
+        processos.append([nome.strip(), tempo])
+
+    processos.sort(key=lambda x: x[1])
+    resultado = ["----- ORDEM DE PROCESSO /SJF/ -----"]
+    for p in processos:
+        resultado.append(f"{p[0]} - {p[1]}")
+    show_result("SJF", resultado)
+
+def prioridade_gui():
+    processos = []
+    quant = simpledialog.askinteger("PRIORIDADE", "Quantidade de processos:")
+    if quant is None or quant <= 0:
+        return
+
+    for i in range(quant):
+        nome = simpledialog.askstring("PRIORIDADE", f"Nome do processo {i + 1}:")
+        if nome is None or nome.strip() == "":
+            return
+        prioridade = simpledialog.askinteger("PRIORIDADE", f"Prioridade (menor = mais prioritário) de {nome}:")
+        if prioridade is None or prioridade < 0:
+            return
+        processos.append([nome.strip(), prioridade])
+
+    processos.sort(key=lambda x: x[1])
+    resultado = ["----- ORDEM DE PROCESSO /PRIORIDADE/ -----"]
+    for p in processos:
+        resultado.append(f"{p[0]} - Prioridade {p[1]}")
+    show_result("PRIORIDADE", resultado)
 
 # ----- Interface principal -----
 root = tk.Tk()
