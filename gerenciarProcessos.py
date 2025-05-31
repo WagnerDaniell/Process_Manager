@@ -1,55 +1,97 @@
 import tkinter as tk
 from tkinter import simpledialog, Toplevel, Text, messagebox
 
+#Mostrar os resultados personalizado!
+
+#esse frame resumidamente são uma div kk
 def show_result(title, lines):
     result_win = Toplevel(root)
     result_win.title(title)
     result_win.configure(bg="#f0f2f5")
-    result_win.geometry("600x400")
-    result_win.resizable(False, False)
-
-    header = tk.Label(result_win, text=title, font=("Segoe UI", 18, "bold"), bg="#f0f2f5", fg="#2c3e50")
-    header.pack(pady=(15, 5))
-
-    frame = tk.Frame(result_win, bg="white", bd=2, relief="groove")
-    frame.pack(padx=20, pady=10, fill="both", expand=True)
-
-    scrollbar = tk.Scrollbar(frame)
-    scrollbar.pack(side="right", fill="y")
-
-    text = Text(frame, width=60, height=20, wrap="word", yscrollcommand=scrollbar.set,
-                bg="white", fg="#333", font=("Segoe UI", 12), bd=0, padx=10, pady=10)
-    text.pack(fill="both", expand=True)
+    result_win.geometry("700x500")
+    
+    main_frame = tk.Frame(result_win, bg="#f0f2f5")
+    main_frame.pack(fill='both', expand=True, padx=20, pady=20)
+    
+    header = tk.Label(main_frame, 
+                     text=title, 
+                     font=("Segoe UI", 18, "bold"), 
+                     bg="#f0f2f5", 
+                     fg="#2c3e50")
+    header.pack(pady=(0, 15))
+    
+    content_frame = tk.Frame(main_frame, 
+                           bg="white", 
+                           bd=1, 
+                           relief="solid")
+    content_frame.pack(fill='both', expand=True)
+    
+    text_frame = tk.Frame(content_frame, bg="white")
+    text_frame.pack(fill='both', expand=True, padx=5, pady=5)
+    
+    scrollbar = tk.Scrollbar(text_frame)
+    scrollbar.pack(side='right', fill='y')
+    
+    text = Text(text_frame, 
+               width=80, 
+               height=25, 
+               wrap='word', 
+               yscrollcommand=scrollbar.set,
+               bg='white', 
+               fg="#34495e", 
+               font=("Consolas", 10),
+               bd=0, 
+               padx=10, 
+               pady=10)
+    text.pack(fill='both', expand=True)
     scrollbar.config(command=text.yview)
-
+    
     text.config(state='normal')
-
-    spinners = ['|', '/', '-', '\\']
-
+    
+    # spinner
+    spinners = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
+    
     def animar_spinner(base_text, frame_count, line_index):
         spinner_index = frame_count % len(spinners)
-
-        if frame_count < 8:
-            # Remove linha anterior e mostra nova animação
+        
+        if frame_count < 10:
             text.delete("end-2l", "end-1l")
-            text.insert(tk.END, f"{base_text} {spinners[spinner_index]}\n")
+            text.insert(tk.END, f"{spinners[spinner_index]} {base_text}\n")
             text.see(tk.END)
-            result_win.after(100, animar_spinner, base_text, frame_count + 1, line_index)
+            text.tag_add('spinner', 'end-2l linestart', 'end-2l lineend')
+            text.tag_config('spinner', foreground="#3498db")
+            result_win.after(80, animar_spinner, base_text, frame_count + 1, line_index)
         else:
-            # Exibe o resultado final
             text.delete("end-2l", "end-1l")
-            text.insert(tk.END, f"{lines[line_index]}\n")
-            result_win.after(300, mostrar_linhas, line_index + 1)
-
+            text.insert(tk.END, f"✓ {lines[line_index]}\n")
+            text.tag_add('done', 'end-2l linestart', 'end-2l lineend')
+            text.tag_config('done', foreground="#2ecc71")
+            result_win.after(200, mostrar_linhas, line_index + 1)
+    
     def mostrar_linhas(index=0):
         if index < len(lines):
             nome_proc = lines[index].split(":")[0] if ":" in lines[index] else lines[index]
-            base = f"Processando {nome_proc}"
-            text.insert(tk.END, "\n")  # espaço para a animação
-            animar_spinner(base, 0, index)
+            base = f"Processando {nome_proc}" if "-----" not in lines[index] else lines[index]
+            
+            if "-----" in lines[index]:
+                text.insert(tk.END, f"\n{lines[index]}\n")
+                text.tag_add('header', 'end-2l linestart', 'end-2l lineend')
+                text.tag_config('header', 
+                              foreground="#2c3e50", 
+                              font=("Segoe UI", 11, "bold"))
+                result_win.after(100, mostrar_linhas, index + 1)
+            else:
+                text.insert(tk.END, "\n")
+                animar_spinner(base, 0, index)
         else:
             text.config(state='disabled')
-
+            # processamento concluido
+            text.insert(tk.END, "\n\nProcessamento concluído ✓", 'footer')
+            text.tag_config('footer', 
+                          foreground="#2ecc71", 
+                          font=("Segoe UI", 10, "bold"),
+                          justify='center')
+    
     mostrar_linhas()
 
 def calcular_quantum_automatico(processos):
@@ -61,7 +103,7 @@ def rr_gui():
     processos = []
     quant = simpledialog.askinteger("RR", "Quantidade de processos:")
     if quant is None or quant <= 0:
-        return
+        return #Fecha a caixinha
 
     for i in range(quant):
         nome = simpledialog.askstring("RR", f"Nome do processo {i + 1}:")
@@ -72,7 +114,6 @@ def rr_gui():
             return
         processos.append([nome.strip(), tempo])
 
-    # Perguntar se quer definir quantum manualmente ou automaticamente
     resposta = messagebox.askyesno("RR", "Deseja definir o quantum manualmente? (Não para calcular automaticamente)")
     
     if resposta:
@@ -85,17 +126,18 @@ def rr_gui():
 
     fila = processos.copy()
     tempo_total = 0
-    resultado = ["----- ORDEM DE PROCESSO /RR/ -----"]
-    resultado.append(f"Quantum utilizado: {quantum}")
+    resultado = ["----- ORDEM DE PROCESSO /RR/ -----",
+                f"Quantum utilizado: {quantum}",
+                "--------------------------------"]
 
     while fila:
         nome, tempo = fila.pop(0)
         if tempo > quantum:
-            resultado.append(f"Tempo {tempo_total}: {nome} executa {quantum}")
+            resultado.append(f"🔄 Tempo {tempo_total}: {nome} executa {quantum} (restam {tempo-quantum})")
             fila.append([nome, tempo - quantum])
             tempo_total += quantum
         else:
-            resultado.append(f"Tempo {tempo_total}: {nome} executa {tempo} (finalizado)")
+            resultado.append(f"✅ Tempo {tempo_total}: {nome} executa {tempo} (finalizado)")
             tempo_total += tempo
 
     show_result("RR", resultado)
@@ -124,7 +166,6 @@ def multipla_gui():
         else:
             fila3.append([nome.strip(), tempo])
 
-    # Perguntar se quer definir quantum manualmente ou automaticamente
     resposta = messagebox.askyesno("MULTIFILA", "Deseja definir o quantum manualmente? (Não para calcular automaticamente)")
     
     if resposta:
@@ -136,34 +177,36 @@ def multipla_gui():
         messagebox.showinfo("MULTIFILA", f"Quantum calculado: {quantum}")
 
     tempo_total = 0
-    resultado = []
+    resultado = ["----- MÚLTIPLAS FILAS -----",
+                f"Quantum Fila 1: {quantum}",
+                "--------------------------"]
 
-    resultado.append("----- Fila 1 (Round Robin) -----")
+    resultado.append("\n⭐ FILA 1 - ROUND ROBIN")
     fila = fila1.copy()
     while fila:
         nome, tempo_exec = fila.pop(0)
         if tempo_exec > quantum:
-            resultado.append(f"Tempo {tempo_total}: {nome} executa {quantum}")
+            resultado.append(f"🔄 Tempo {tempo_total}: {nome} executa {quantum} (restam {tempo_exec-quantum})")
             fila.append([nome, tempo_exec - quantum])
             tempo_total += quantum
         else:
-            resultado.append(f"Tempo {tempo_total}: {nome} executa {tempo_exec} (finalizado)")
+            resultado.append(f"✅ Tempo {tempo_total}: {nome} executa {tempo_exec} (finalizado)")
             tempo_total += tempo_exec
 
-    resultado.append("----- Fila 2 (SJF) -----")
+    resultado.append("\n🔹 FILA 2 - SJF")
     fila2.sort(key=lambda x: x[1])
     for nome, tempo_exec in fila2:
-        resultado.append(f"Tempo {tempo_total}: {nome} executa {tempo_exec} (finalizado)")
+        resultado.append(f"✅ Tempo {tempo_total}: {nome} executa {tempo_exec} (finalizado)")
         tempo_total += tempo_exec
 
-    resultado.append("----- Fila 3 (FCFS) -----")
+    resultado.append("\n📌 FILA 3 - FCFS")
     for nome, tempo_exec in fila3:
-        resultado.append(f"Tempo {tempo_total}: {nome} executa {tempo_exec} (finalizado)")
+        resultado.append(f"✅ Tempo {tempo_total}: {nome} executa {tempo_exec} (finalizado)")
         tempo_total += tempo_exec
 
     show_result("Múltiplas Filas", resultado)
 
-# ----- Restante do código original permanece igual -----
+
 def fcfs_gui():
     processos = []
     quant = simpledialog.askinteger("FCFS", "Quantidade de processos:")
@@ -176,9 +219,9 @@ def fcfs_gui():
             return
         processos.append(nome.strip())
 
-    resultado = ["----- ORDEM DE PROCESSO /FCFS/ -----", "Obs: O 1° processo acima foi o primeiro a ser processado!"]
-    for p in processos:
-        resultado.append(p)
+    resultado = ["----- ORDEM DE PROCESSO /FCFS/ -----", 
+                "Obs: O 1° processo acima foi o primeiro a ser processado!"]
+    resultado.extend(processos)
     show_result("FCFS", resultado)
 
 def sjf_gui():
@@ -223,7 +266,7 @@ def prioridade_gui():
         resultado.append(f"{p[0]} - Prioridade {p[1]}")
     show_result("PRIORIDADE", resultado)
 
-# ----- Interface principal -----
+# menu
 root = tk.Tk()
 root.title("Simulador de Escalonamento de Processos")
 
